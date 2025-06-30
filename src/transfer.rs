@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::{Read, Write, Seek, SeekFrom};
 use sha2::{Sha256, Digest};
 use indicatif::{ProgressBar, ProgressStyle};
-use crate::{Result, FileMetadata, ChunkInfo, TransferCommand};
+use crate::{Result, FileMetadata, ChunkInfo};
 
 const CHUNK_SIZE: usize = 1024 * 1024; // 1MB chunks
 

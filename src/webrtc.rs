@@ -1,15 +1,12 @@
 use std::path::PathBuf;
 use webrtc::api::APIBuilder;
 use webrtc::peer_connection::configuration::RTCConfiguration;
-use webrtc::peer_connection::peer_connection_state::RTCPeerConnectionState;
-use webrtc::data_channel::data_channel_message::DataChannelMessage;
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
-use serde_json;
-use crate::{Result, TransferCommand, TransferProtocol};
+use crate::{Result, TransferProtocol};
 
 pub struct WebRTCTransfer {
     peer_connection: webrtc::peer_connection::RTCPeerConnection,
-    data_channel: Option<webrtc::data_channel::RTCDataChannel>,
+    data_channel: Option<std::sync::Arc<webrtc::data_channel::RTCDataChannel>>,
 }
 
 impl WebRTCTransfer {
@@ -84,12 +81,12 @@ impl WebRTCTransfer {
 
 #[async_trait::async_trait]
 impl TransferProtocol for WebRTCTransfer {
-    async fn send_file(&mut self, path: PathBuf) -> Result<()> {
+    async fn send_file(&mut self, _path: PathBuf) -> Result<()> {
         // Implementation for sending file over WebRTC
         Ok(())
     }
 
-    async fn receive_file(&mut self, path: PathBuf) -> Result<()> {
+    async fn receive_file(&mut self, _path: PathBuf) -> Result<()> {
         // Implementation for receiving file over WebRTC
         Ok(())
     }

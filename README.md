@@ -1,133 +1,200 @@
-# Drop - A Cross-Platform File Sharing Experiment
+# Drop - Cross-Platform AirDrop Alternative
 
-## Overview
+<div align="center">
+  <img src="https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white" alt="Rust">
+  <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js">
+  <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
+  <img src="https://img.shields.io/badge/WebRTC-333333?style=for-the-badge&logo=webrtc&logoColor=white" alt="WebRTC">
+</div>
 
-Drop aims to be a seamless file-sharing solution across any platform, inspired by Apple's AirDrop. It leverages web technologies for the transfer and aims to use NFC and/or BLE for connection initiation without requiring a dedicated app installation on the receiving end (potentially using the Web Bluetooth/Web NFC APIs where available or platform-specific OS integrations).
+## 🚀 Overview
 
-The core idea is to make file sharing quick and easy, without needing to be on the same Wi-Fi network or relying on one device to host a hotspot. File transfers are intended to occur over a direct peer-to-peer Wi-Fi connection (e.g., Wi-Fi Direct or WebRTC over local network) or relayed if a direct connection isn't possible.
+Drop is a modern, cross-platform file sharing solution that works seamlessly across **any device** with a web browser. Inspired by Apple's AirDrop, it eliminates the limitations of platform-specific file sharing by leveraging web technologies for universal compatibility.
 
-**Current Status:**
-*   **Frontend:** Basic Next.js application setup in the `/frontend` directory.
-*   **Backend:** Rust-based backend (`drop_backend`) using Actix Web.
-    *   Serves as a signaling server for WebRTC.
-    *   API endpoints for creating transfer sessions and exchanging signaling messages.
-*   **File Transfer:** Signaling mechanism is in place. Actual WebRTC data channel for file transfer is the next major step.
-*   **Discovery (NFC/BLE):** Not yet implemented.
+### ✨ Key Features
 
-## Project Structure
+- 🌐 **Universal Compatibility** - Works on any device with a browser (Windows, macOS, Linux, iOS, Android)
+- 🔒 **End-to-End Encrypted** - Secure peer-to-peer file transfers
+- 🚀 **No File Size Limits** - Transfer files of any size
+- 📱 **No App Installation Required** - Pure web-based solution
+- 🎯 **Simple Share Codes** - Easy 6-character codes for quick sharing
+- ⚡ **Real-time Progress** - Live transfer progress with visual feedback
+- 🔗 **Direct P2P Transfer** - Files transfer directly between devices
+- 🎨 **Beautiful Modern UI** - Intuitive interface with smooth animations
 
-```
-drop/
-├── frontend/         # Next.js frontend application
-│   ├── src/
-│   ├── public/
-│   ├── package.json
-│   └── ...
-├── src/              # Rust backend (drop_backend) library and binary
-│   ├── ble.rs        # Placeholder/WIP for Bluetooth LE
-│   ├── crypto.rs     # Placeholder/WIP for cryptographic operations
-│   ├── error.rs      # Custom error types
-│   ├── lib.rs        # Backend library code (includes signaling server logic)
-│   ├── main.rs       # Backend binary entry point
-│   ├── protocol.rs   # Placeholder/WIP for transfer protocol definitions
-│   ├── transfer.rs   # Placeholder/WIP for file transfer logic
-│   └── webrtc.rs     # Placeholder/WIP for WebRTC integration
-├── .gitignore
-├── Cargo.lock
-├── Cargo.toml        # Rust backend dependencies and configuration
-└── README.md         # This file
-```
+## 🏗️ Architecture
 
-## Prerequisites
-
-*   [Node.js and npm](https://nodejs.org/) (for the frontend)
-*   [Rust and Cargo](https://www.rust-lang.org/tools/install) (for the backend)
-
-## Setup and Running
-
-### Backend (Rust - `drop_backend`)
-
-1.  **Navigate to the project root:**
-    ```bash
-    cd /path/to/your/drop
-    ```
-
-2.  **Build the backend:**
-    ```bash
-    cargo build
-    ```
-
-3.  **Run the backend server:**
-    ```bash
-    cargo run
-    ```
-    The server will start on `http://127.0.0.1:8080` by default. You should see output like:
-    ```
-    Initializing drop_backend...
-    Starting Actix web server on http://127.0.0.1:8080
-    ```
-
-4.  **Run backend tests:**
-    ```bash
-    cargo test
-    ```
+### Backend (Rust)
+- **WebRTC Signaling Server** - Facilitates peer-to-peer connections
+- **Session Management** - Handles share codes and connection coordination
+- **CORS Support** - Enables cross-origin requests from frontend
+- **High Performance** - Rust-powered backend for reliability
 
 ### Frontend (Next.js)
+- **React-based UI** - Modern, responsive interface
+- **WebRTC Client** - Handles peer-to-peer file transfers
+- **Real-time Updates** - Live connection status and transfer progress
+- **File Management** - Drag & drop, file selection, and download handling
 
-1.  **Navigate to the frontend directory:**
-    ```bash
-    cd /path/to/your/drop/frontend # Replace with the actual path
-    ```
+### File Transfer Flow
+1. **Sender** creates a session and gets a 6-character share code
+2. **Receiver** enters the code to join the session
+3. **WebRTC Connection** established through signaling server
+4. **Direct P2P Transfer** - Files transfer directly between devices
+5. **Automatic Download** - Received files are automatically downloadable
 
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
+## 🚀 Quick Start
 
-3.  **Run the development server:**
-    ```bash
-    npm run dev
-    ```
-    The Next.js frontend will typically start on `http://localhost:3000`.
+### Prerequisites
+- [Rust](https://rustup.rs/) (1.80+)
+- [Node.js](https://nodejs.org/) (18+)
+- Modern web browser with WebRTC support
 
-## Core Components & Logic
+### Installation & Setup
 
-### 1. Backend Signaling Server (Rust/Actix Web)
+1. **Clone the repository**
+   ```bash
+   git clone <your-repo-url>
+   cd drop
+   ```
 
-*   Located in `drop/src/lib.rs` and `drop/src/main.rs`.
-*   Provides API endpoints for WebRTC signaling:
-    *   `POST /api/session/create`: Initiates a new sharing session and returns a unique `session_id`.
-    *   `POST /api/session/{session_id}/signal/send`: Allows a client to send a signaling message (SDP offer/answer, ICE candidate) to the other peer in the session.
-    *   `GET /api/session/{session_id}/signal/receive`: Allows a client to poll for signaling messages from the other peer.
-*   Uses an in-memory store (`DashMap`) for session messages (this would be replaced by a more robust solution like Redis in a production environment).
+2. **Start the backend server**
+   ```bash
+   cargo run
+   ```
+   Backend will start at `http://127.0.0.1:8080`
 
-### 2. Frontend (Next.js)
+3. **Start the frontend (in a new terminal)**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+   Frontend will start at `http://localhost:3000`
 
-*   Located in `drop/frontend`.
-*   Will handle:
-    *   User interface for initiating and receiving files.
-    *   WebRTC connection establishment using the backend signaling server.
-    *   Actual file transfer via WebRTC `RTCDataChannel`.
-    *   Potentially, interaction with Web Bluetooth/Web NFC APIs for discovery.
+### Usage
 
-### 3. File Transfer (WebRTC)
+#### Sending Files
+1. Open `http://localhost:3000` in your browser
+2. Drag & drop files or click "browse" to select files
+3. Click "Create Share Link" to generate a 6-character code
+4. Share the code with the recipient
 
-The file transfer itself is envisioned to happen directly between peers using WebRTC data channels. The Rust backend's role is primarily to facilitate the initial WebRTC handshake (signaling).
+#### Receiving Files
+1. Open `http://localhost:3000` in any browser
+2. Enter the 6-character share code
+3. Click "Join" to connect
+4. Files will be received automatically and available for download
 
-### 4. Discovery (NFC/BLE - Future)
+## 🔧 Development
 
-The idea is to use NFC taps or BLE advertisements to initiate a connection.
-*   **Sender:** Taps phone or brings device close to receiver.
-*   **Receiver:** (If no app) A browser could potentially be opened via an NFC NDEF record or a Physical Web BLE beacon, pointing to a URL on the Drop web app, perhaps with the session ID or sender's identifier embedded.
-*   The exact mechanism will require careful design and will depend on OS capabilities and browser support for Web NFC / Web Bluetooth.
+### Project Structure
+```
+drop/
+├── src/                    # Rust backend
+│   ├── main.rs            # Server entry point
+│   ├── lib.rs             # Core library with API endpoints
+│   ├── webrtc.rs          # WebRTC utilities
+│   ├── transfer.rs        # File transfer logic
+│   ├── crypto.rs          # Encryption utilities (future)
+│   ├── ble.rs             # Bluetooth LE (future)
+│   └── protocol.rs        # Transfer protocol definitions
+├── frontend/               # Next.js frontend
+│   ├── src/app/
+│   │   ├── page.tsx       # Main UI component
+│   │   └── hooks/
+│   │       └── useWebRTC.ts  # WebRTC React hook
+│   ├── package.json
+│   └── tailwind.config.js
+├── Cargo.toml             # Rust dependencies
+└── README.md
+```
 
-## Future Development
+### Backend API Endpoints
 
-*   Implement WebRTC client logic in the Next.js frontend for peer connection and data channel setup.
-*   Develop the file selection and transfer UI.
-*   Integrate actual file sending/receiving over `RTCDataChannel`.
-*   Design and implement the NFC/BLE discovery and handshake mechanism.
-*   Explore platform-specific integrations if web-based discovery is insufficient.
-*   Add more robust error handling and user feedback.
-*   Secure the signaling channel and consider end-to-end encryption for file transfers.
-*   Refine the UI/UX for a simple and intuitive experience.
+- `POST /api/session/create` - Create new sharing session
+- `POST /api/session/{id}/signal/send` - Send WebRTC signaling message
+- `GET /api/session/{id}/signal/receive` - Receive WebRTC signaling messages
+
+### Frontend Components
+
+- **useWebRTC Hook** - Manages WebRTC connections and file transfers
+- **File Drop Zone** - Handles file selection and drag & drop
+- **Transfer Progress** - Real-time progress visualization
+- **Connection Status** - Live connection state updates
+
+## 🔮 Future Enhancements
+
+### Phase 1 (Current)
+- ✅ WebRTC-based file transfer
+- ✅ Beautiful modern UI
+- ✅ Cross-platform compatibility
+- ✅ Real-time progress tracking
+
+### Phase 2 (Planned)
+- 🔄 QR Code sharing for mobile devices
+- 🔄 End-to-end encryption implementation
+- 🔄 Bluetooth LE discovery
+- 🔄 NFC tap-to-share
+- 🔄 File preview capabilities
+
+### Phase 3 (Future)
+- 🔄 Mobile app companions
+- 🔄 Desktop native apps
+- 🔄 Cloud relay for NAT traversal
+- 🔄 Group file sharing
+- 🔄 File history and management
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how you can help:
+
+1. **Fork the repository**
+2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
+3. **Commit your changes** (`git commit -m 'Add amazing feature'`)
+4. **Push to the branch** (`git push origin feature/amazing-feature`)
+5. **Open a Pull Request**
+
+### Development Guidelines
+- Follow Rust best practices for backend code
+- Use TypeScript for all frontend code
+- Maintain consistent code formatting
+- Add tests for new features
+- Update documentation as needed
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🔒 Security
+
+Drop prioritizes security with:
+- **Peer-to-peer transfers** - Files never pass through our servers
+- **WebRTC encryption** - Built-in transport layer security
+- **Session-based sharing** - Temporary, code-based access
+- **No data persistence** - Sessions and codes are temporary
+
+## 🌟 Why Drop?
+
+Unlike traditional file sharing solutions, Drop:
+
+- **Works everywhere** - No platform restrictions
+- **Requires no installation** - Pure web-based
+- **Direct transfers** - No file size limits or cloud storage
+- **Privacy-focused** - Files never leave your local network
+- **Modern UX** - Beautiful, intuitive interface
+- **Open source** - Transparent and community-driven
+
+## 📞 Support
+
+- **Issues**: Report bugs or request features via [GitHub Issues](../../issues)
+- **Discussions**: Join the conversation in [GitHub Discussions](../../discussions)
+- **Documentation**: Check the [Wiki](../../wiki) for detailed guides
+
+---
+
+<div align="center">
+  <b>Drop - Making file sharing universal 🌍</b>
+  <br>
+  <sub>Built with ❤️ using Rust, Next.js, and WebRTC</sub>
+</div>

@@ -1,5 +1,3 @@
-use crate::Result;
-
 pub struct Crypto {
     // Crypto implementation will go here
 }

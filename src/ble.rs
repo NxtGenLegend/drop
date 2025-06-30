@@ -1,5 +1,3 @@
-use crate::Result;
-
 pub struct BLE {
     // BLE implementation will go here
 }

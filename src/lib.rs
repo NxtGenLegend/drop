@@ -8,15 +8,19 @@ pub mod error;
 use std::path::PathBuf;
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
-use actix_web::{get, App, HttpResponse, HttpServer, Responder, post, web};
+use actix_web::{get, App, HttpResponse, HttpServer, Responder, post, web, middleware::Logger};
+use actix_cors::Cors;
 use dashmap::DashMap;
 use std::sync::Arc;
-use uuid::Uuid;
+use rand::Rng;
+use async_trait::async_trait;
 
 #[derive(Debug, Error)]
 pub enum DropError {
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
+    #[error("Serialization error: {0}")]
+    SerdeJson(#[from] serde_json::Error),
     #[error("Protocol error: {0}")]
     Protocol(String),
     #[error("BLE error: {0}")]
@@ -29,7 +33,7 @@ pub enum DropError {
 
 pub type Result<T> = std::result::Result<T, DropError>;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FileMetadata {
     pub name: String,
     pub size: u64,
@@ -37,7 +41,7 @@ pub struct FileMetadata {
     pub chunks: Vec<ChunkInfo>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ChunkInfo {
     pub index: u32,
     pub size: u64,
@@ -53,6 +57,7 @@ pub enum TransferCommand {
     Error(String),
 }
 
+#[async_trait]
 pub trait TransferProtocol {
     async fn send_file(&mut self, path: PathBuf) -> Result<()>;
     async fn receive_file(&mut self, path: PathBuf) -> Result<()>;
@@ -79,9 +84,27 @@ pub struct AppState {
     pub sessions: Arc<DashMap<String, Vec<SignalingMessage>>>,
 }
 
+// Generate a user-friendly 6-character code
+fn generate_session_code() -> String {
+    let mut rng = rand::thread_rng();
+    let chars: Vec<char> = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".chars().collect();
+    (0..6)
+        .map(|_| chars[rng.gen_range(0..chars.len())])
+        .collect()
+}
+
 #[post("/api/session/create")]
 async fn create_session(data: web::Data<AppState>) -> impl Responder {
-    let session_id = Uuid::new_v4().to_string();
+    let session_id = generate_session_code();
+    // Ensure the session ID is unique
+    while data.sessions.contains_key(&session_id) {
+        let session_id = generate_session_code();
+        if !data.sessions.contains_key(&session_id) {
+            data.sessions.insert(session_id.clone(), Vec::new());
+            return HttpResponse::Ok().json(CreateSessionResponse { session_id });
+        }
+    }
+    
     data.sessions.insert(session_id.clone(), Vec::new());
     HttpResponse::Ok().json(CreateSessionResponse { session_id })
 }
@@ -128,6 +151,9 @@ async fn hello() -> impl Responder {
 
 // Renamed and changed to async, removed FFI parts and explicit runtime.
 pub async fn start_actix_server() -> std::io::Result<()> {
+    // Initialize logging
+    tracing_subscriber::fmt::init();
+    
     println!("Starting Actix web server on http://127.0.0.1:8080");
 
     let app_state = web::Data::new(AppState {
@@ -135,7 +161,17 @@ pub async fn start_actix_server() -> std::io::Result<()> {
     });
 
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allowed_origin("http://localhost:3000")
+            .allowed_origin("http://127.0.0.1:3000")
+            .allowed_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+            .allowed_headers(vec!["content-type", "authorization"])
+            .supports_credentials()
+            .max_age(3600);
+
         App::new()
+            .wrap(cors)
+            .wrap(Logger::default())
             .app_data(app_state.clone()) // Add shared state
             .service(hello) // Keep existing hello route
             .service(create_session)
